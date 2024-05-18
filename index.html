@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>Test 3</title>
+		<meta charset="utf-8">
+		
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+		<script type="importmap">
+		  {
+			"imports": {
+			  "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+			  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/",
+			  "vax": "https://boytchev.github.io/CourseVAX/lib/vax.js"
+			}
+		  }
+		</script>
+	</head>
+	
+	<body>
+		<script type="module">
+		
+			import * as THREE from "three";
+			import {OrbitControls } from "three/addons/controls/OrbitControls.js";
+			import {vaxInit, renderer, scene, camera} from "vax";
+			import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+
+			vaxInit(animate);
+
+			camera.fov = 100;
+			camera.updateProjectionMatrix();
+
+			var controls = new OrbitControls(camera, renderer.domElement);
+				controls.enableZoom = false;
+				controls.enablePan = false;
+				controls.enableDamping = true;
+				controls.minPolarAngle = 0.1;
+				controls.maxPolarAngle = Math.PI - 0.1;
+				controls.dampingFactor = 0.1;
+
+			const cubeTextureLoader = new THREE.CubeTextureLoader();
+			cubeTextureLoader.setPath('skybox/');
+
+			scene.background = cubeTextureLoader.load([
+						'px.png', 'nx.png',
+						'py.png', 'ny.png',
+						'pz.png', 'nz.png']);
+
+			scene.background.colorSpace = THREE.LinearSRGBColorSpace;
+
+			const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(512);
+			const cubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget);
+			scene.add(cubeCamera);
+
+			window.addEventListener('resize', () => {
+			const width = window.innerWidth;
+			const height = window.innerHeight;
+			renderer.setSize(width, height);
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+			});
+
+
+			camera.position.set(0, 0, 5);
+			controls.update();
+
+			renderer.setAnimationLoop(animate);
+
+			window.addEventListener('resize', function() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			});
+
+
+			const loader = new RGBELoader();
+			loader.load('skybox/landscape.hdr', function(texture) {
+				texture.mapping = THREE.EquirectangularReflectionMapping;
+				scene.environment = texture;
+			});
+
+			const objects = [];
+
+			const objectGeometry = new THREE.TetrahedronGeometry(2, 2);
+			const objectMaterial = new THREE.MeshPhysicalMaterial({
+				roughness: 0,
+				metalness: 0.05,
+				transmission: 1
+			});
+
+
+			for (let i = 0; i < 30; i++) {
+				const object = new THREE.Mesh(objectGeometry, objectMaterial);
+
+				objects.push(object);
+			
+				object.position.x = THREE.MathUtils.randFloat(-20, 20);
+				object.position.y = THREE.MathUtils.randFloat(-20, 20);
+				object.position.z = THREE.MathUtils.randFloat(-20, 20);
+
+				scene.add(object);
+			}
+
+			let previousvarter;
+			let previousGamma;
+			let previousAlpha;
+			let deviceNotFound = false;
+						
+			function deviceOrientation( event )
+			{
+				let alpha = event.alpha;
+
+				if(alpha === null) alert("Error: Cannot find device orientation");
+
+				let gamma = event.gamma;
+
+				if(gamma === null) alert("Error: Cannot find device orientation");
+
+				deviceNotFound = !gamma && !alpha;
+							
+				if(gamma >= 0) {
+					gamma = 90 - gamma;
+
+					if(!previousvarter){
+						previousvarter = 'A';
+						previousGamma = gamma;
+						previousAlpha = alpha;
+					} else {
+						if (previousvarter != 'A'){
+							if (Math.abs(previousGamma - gamma) < 30) {
+								previousvarter = 'A';
+								previousGamma = gamma;
+								previousAlpha = alpha;
+							} else {
+								alpha = alpha - 180;
+								gamma = previousGamma;
+							}
+						} else {
+							previousGamma = gamma;
+							previousAlpha = alpha;
+						}
+					}
+				} else {
+					alpha = alpha + 180;
+					gamma = -90 - gamma;
+
+					if (!previousvarter) {
+						previousvarter = 'A';
+						previousGamma = gamma;
+						previousAlpha = alpha;
+					} else {
+						if (previousvarter != 'B') {
+							if (Math.abs(previousGamma - gamma) < 30) {
+								previousvarter = 'B';
+								previousGamma = gamma;
+								previousAlpha = alpha;
+							} else {
+								alpha = alpha + 180;
+								gamma = previousGamma;
+							}
+						} else {
+							previousGamma = gamma;
+							previousAlpha = alpha;
+						}
+					}
+				}
+												
+				alpha = THREE.MathUtils.degToRad(alpha);
+				gamma = THREE.MathUtils.degToRad(gamma);
+							
+				camera.rotation.set(gamma, alpha, 0, 'YXZ');
+			}
+
+			window.addEventListener("deviceorientation", deviceOrientation, true);
+
+			function animate()
+			{
+				requestAnimationFrame(animate);
+				cubeCamera.update(renderer, scene);
+				renderer.render(scene, camera);
+
+				controls.update();
+			}
+		</script>	
+	</body>
+</html>
+
+
