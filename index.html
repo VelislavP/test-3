@@ -22,22 +22,13 @@
 		<script type="module">
 		
 			import * as THREE from "three";
-			import {OrbitControls } from "three/addons/controls/OrbitControls.js";
-			import {vaxInit, renderer, scene, camera} from "vax";
+			import {vaxInitParallax, renderer, scene, camera} from "vax";
 			import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
 
-			vaxInit(animate);
+			vaxInitParallax(animate);
 
 			camera.fov = 100;
 			camera.updateProjectionMatrix();
-
-			var controls = new OrbitControls(camera, renderer.domElement);
-				controls.enableZoom = false;
-				controls.enablePan = false;
-				controls.enableDamping = true;
-				controls.minPolarAngle = 0.1;
-				controls.maxPolarAngle = Math.PI - 0.1;
-				controls.dampingFactor = 0.1;
 
 			const cubeTextureLoader = new THREE.CubeTextureLoader();
 			cubeTextureLoader.setPath('skybox/');
@@ -53,26 +44,13 @@
 			const cubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget);
 			scene.add(cubeCamera);
 
-			window.addEventListener('resize', () => {
-			const width = window.innerWidth;
-			const height = window.innerHeight;
-			renderer.setSize(width, height);
-			camera.aspect = width / height;
-			camera.updateProjectionMatrix();
-			});
-
-
-			camera.position.set(0, 0, 5);
-			controls.update();
-
-			renderer.setAnimationLoop(animate);
+			camera.position.set(0, 0, 0);
 
 			window.addEventListener('resize', function() {
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
 				renderer.setSize(window.innerWidth, window.innerHeight);
 			});
-
 
 			const loader = new RGBELoader();
 			loader.load('skybox/landscape.hdr', function(texture) {
@@ -179,8 +157,6 @@
 				requestAnimationFrame(animate);
 				cubeCamera.update(renderer, scene);
 				renderer.render(scene, camera);
-
-				controls.update();
 			}
 		</script>	
 	</body>
